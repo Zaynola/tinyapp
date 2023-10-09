@@ -37,11 +37,38 @@ app.get("/urls/:id", (req, res) => {
     res.render("urls_show", templateVars);
   });
 
+  app.get("/u/:id", (req, res) => {
+    const id = req.params.id;
+    const longURL = urlDatabase[id];
+
+    if (longURL) {
+        res.redirect(longURL);
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
 });
 
+// Define a function to generate a random alphanumeric string of a given length
+function generateRandomString(length) {
+    const characters = 'a -z';
+    let randomString = '';
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        randomString += characters.charAt(randomIndex);
+    }
+
+    return randomString;
+}
+
 app.post("/urls", (req, res) => {
-    console.log(req.body); // Log the POST request body to the console
-    res.send("Ok"); // Respond with 'Ok' (we will replace this)
+    const longURL = req.body.longURL; // Extract the longURL from the request body
+    const shortURL = generateRandomString();
+    // Add the shortURL-longURL pair to the urlDatabase
+    urlDatabase[shortURL] = longURL;
+    // Redirect the user to the newly created URL's details page
+    res.redirect(`/urls/${shortURL}`);
   });
