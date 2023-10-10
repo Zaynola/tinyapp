@@ -53,8 +53,8 @@ app.listen(PORT, () => {
 });
 
 // Define a function to generate a random alphanumeric string of a given length
-function generateRandomString(length) {
-    const characters = 'a -z';
+function generateRandomString(length=6) {
+    const characters = 'abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let randomString = '';
     for (let i = 0; i < length; i++) {
         const randomIndex = Math.floor(Math.random() * characters.length);
@@ -72,3 +72,14 @@ app.post("/urls", (req, res) => {
     // Redirect the user to the newly created URL's details page
     res.redirect(`/urls/${shortURL}`);
   });
+
+  app.post("/urls/:id/delete", (req, res) => {
+    const id = req.params.id;
+
+    if (urlDatabase[id]) {
+        delete urlDatabase[id];
+        res.redirect("/urls");
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
