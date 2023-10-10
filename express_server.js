@@ -83,3 +83,15 @@ app.post("/urls", (req, res) => {
         res.status(404).send("URL not found");
     }
 });
+
+app.post("/urls/:id", (req, res) => {
+    const id = req.params.id;
+    const newLongURL = req.body.longURL; // Get the new longURL from the request body
+
+    if (urlDatabase[id]) {
+        urlDatabase[id] = newLongURL;
+        res.redirect("/urls");
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
