@@ -1,8 +1,10 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const cookieParser = require("cookie-parser");
 
 app.set("view engine", "ejs");
+app.use(cookieParser());
 
 const urlDatabase = {
     "b2xVn2": "http://www.lighthouselabs.ca",
@@ -24,20 +26,24 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-    const templateVars = {urls: urlDatabase };
+    const username = req.cookies ? req.cookies.username : undefined;
+    const templateVars = {
+        urls: urlDatabase,
+        username: username
+    };
     res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
     res.render("urls_new");
-  });
+});
 
 app.get("/urls/:id", (req, res) => {
     const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
     res.render("urls_show", templateVars);
-  });
+});
 
-  app.get("/u/:id", (req, res) => {
+app.get("/u/:id", (req, res) => {
     const id = req.params.id;
     const longURL = urlDatabase[id];
 
@@ -53,7 +59,7 @@ app.listen(PORT, () => {
 });
 
 // Define a function to generate a random alphanumeric string of a given length
-function generateRandomString(length=6) {
+function generateRandomString(length = 6) {
     const characters = 'abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let randomString = '';
     for (let i = 0; i < length; i++) {
@@ -71,9 +77,9 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = longURL;
     // Redirect the user to the newly created URL's details page
     res.redirect(`/urls/${shortURL}`);
-  });
+});
 
-  app.post("/urls/:id/delete", (req, res) => {
+app.post("/urls/:id/delete", (req, res) => {
     const id = req.params.id;
 
     if (urlDatabase[id]) {
@@ -94,4 +100,17 @@ app.post("/urls/:id", (req, res) => {
     } else {
         res.status(404).send("URL not found");
     }
+});
+
+//add a endpoint to handle a post to /login that set a cookie named username
+app.post("/login", (req, res) => {
+    const { username } = req.body;
+    res.cookie("username", username);
+    res.redirect("/urls");
+});
+
+// Add a route for handling logout
+app.post("/logout", (req, res) => {
+    res.clearCookie("username");
+    res.redirect("/urls");
 });
