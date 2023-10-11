@@ -19,25 +19,25 @@
         </div>
       </div>
       <span class="navbar-text">
-        Welcome, <%= username %>
     </span>
+    <% if (!username) { %>
+      <div class="container">
+        <h2></h2>
+        <form action="/login" method="POST">
+            <div class="form-inline">
+                <label form="username"></label>
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+        </form>
+    </div>
+    <% } else { %>
+      <div class="container">
+        <form action="/logout" method="POST">
+          <button type="submit" class="btn btn-primary">Logout</button>
+        </form>
+      </div>
+      <% } %>
+
     </nav>
   </header>
-  <% if (!username) { %>
-  <div class="container">
-    <h2>Login</h2>
-    <form action="/login" method="POST">
-        <div class="form-group">
-            <label form="username">Username</label>
-            <input type="text" class="form-control" id="username" name="username" placeholder="Username">
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
-</div>
-<% } else { %>
-  <div class="container">
-    <form action="/logout" method="POST">
-      <button type="submit" class="btn btn-primary">Logout</button>
-    </form>
-  </div>
-  <% } %>
