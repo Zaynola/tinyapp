@@ -11,6 +11,19 @@ const urlDatabase = {
     "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+    userRandomID: {
+        id: "userRandomID",
+        email: "user@example.com",
+        password: "purple-monkey-dinosaur",
+    },
+    user2RandomID: {
+        id: "user2RandomID",
+        email: "user2@example.com",
+        password: "dishwasher-funk",
+    },
+};
+
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -26,16 +39,16 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-    const username = req.cookies ? req.cookies.username : undefined;
+    const user_id = req.cookies ? req.cookies.user_id : undefined;
     const templateVars = {
         urls: urlDatabase,
-        username: username
+        user_id: user_id
     };
     res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-    res.render("urls_new");
+    res.render("urls_new", { user_id: "hi" });
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -52,6 +65,22 @@ app.get("/u/:id", (req, res) => {
     } else {
         res.status(404).send("URL not found");
     }
+});
+
+app.get("/register", (req, res) => {
+    const user_id = req.cookies ? req.cookies.user_id : undefined;
+    const templateVars = {
+        user_id: user_id
+    };
+    res.render("register", templateVars);
+});
+
+app.get("/login", (req, res) => {
+    if (!req.cookies.user_id) {
+        let templateVars = { user_id: "" };
+        return res.render("login", templateVars);
+    }
+    res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
@@ -104,13 +133,37 @@ app.post("/urls/:id", (req, res) => {
 
 //add a endpoint to handle a post to /login that set a cookie named username
 app.post("/login", (req, res) => {
-    const { username } = req.body;
-    res.cookie("username", username);
+    const { user_id } = req.body;
+    res.cookie("user_id", user_id);
     res.redirect("/urls");
 });
 
 // Add a route for handling logout
 app.post("/logout", (req, res) => {
     res.clearCookie("username");
+    res.redirect("/urls");
+});
+
+app.post("/register", (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        res.status(400).send("Email and password cannot be empty.");
+        return;
+    }
+    // Check if the email already exists in the users object
+    for (const userId in users) {
+        if (users[userId].email === email) {
+            res.status(400).send("Email already registered.");
+            return;
+        }
+    }
+    const userId = generateRandomString();
+    users[userId] = {
+        id: userId,
+        email: email,
+        password: password,
+    };
+    res.cookie("user_id", userId);
     res.redirect("/urls");
 });
