@@ -40,7 +40,9 @@ app.get("/hello", (req, res) => {
 
 app.get("/urls", (req, res) => {
     const user_id = req.cookies['user_id'];
-
+    if (!user_id) {
+        return res.redirect("/login");
+    }
     const templateVars = {
         urls: urlDatabase,
         user_id: users[user_id]
