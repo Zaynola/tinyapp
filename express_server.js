@@ -59,7 +59,7 @@ app.get("/urls/new", (req, res) => {
     const user_id = req.cookies['user_id'];
 
     const templateVars = {
-        urls: urlDatabase,  // If you have a 'urlDatabase' variable
+        urls: urlDatabase, 
         user_id: users[user_id]
     };
     res.render("urls_new", templateVars);
