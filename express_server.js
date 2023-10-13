@@ -39,17 +39,32 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-    const user_id = req.cookies ? req.cookies.user_id : undefined;
+    const user_id = req.cookies['user_id'];
+
     const templateVars = {
         urls: urlDatabase,
-        user_id: user_id
+        user_id: users[user_id]
     };
     res.render("urls_index", templateVars);
 });
 
+// app.get("/urls/new", (req, res) => {
+//     const templateVars = {
+//         user_id: users[req.cookies['user_id']]
+//     }
+//     res.render("urls_new", templateVars);
+
+// });
 app.get("/urls/new", (req, res) => {
-    res.render("urls_new", { user_id: "hi" });
+    const user_id = req.cookies['user_id'];
+
+    const templateVars = {
+        urls: urlDatabase,  // If you have a 'urlDatabase' variable
+        user_id: users[user_id]
+    };
+    res.render("urls_new", templateVars);
 });
+
 
 app.get("/urls/:id", (req, res) => {
     const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
@@ -83,10 +98,15 @@ app.get("/login", (req, res) => {
     res.redirect("/urls");
 });
 
-app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}!`);
-});
 
+const getUserByEmail = (email, users) => {
+    for (const userId in users) {
+        if (users[userId].email === email) {
+            return userId;
+        }
+    }
+    return null;
+};
 // Define a function to generate a random alphanumeric string of a given length
 function generateRandomString(length = 6) {
     const characters = 'abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -132,17 +152,46 @@ app.post("/urls/:id", (req, res) => {
 });
 
 //add a endpoint to handle a post to /login that set a cookie named username
+// app.post("/login", (req, res) => {
+//     const { user_id } = req.body;
+//     res.cookie("user_id", user_id);
+//     res.redirect("/urls");
+// });
+
+
+
+
+
 app.post("/login", (req, res) => {
-    const { user_id } = req.body;
-    res.cookie("user_id", user_id);
-    res.redirect("/urls");
-});
+
+    const loginEmail = req.body.email;
+    const loginPassword = req.body.password;
+    const user = getUserByEmail(loginEmail, users);
+    const loginUser = users[user]
+
+
+    if (loginUser) {
+        if (loginPassword === loginUser.password) {
+            res.cookie("user_id", user.id);
+            res.redirect("/urls");
+        } else {
+            return res.status(403).send('Invalid password');
+        }
+    } else {
+        return res.status(403).send('User not found');
+    }
+
+}
+);
+
+
 
 // Add a route for handling logout
 app.post("/logout", (req, res) => {
-    res.clearCookie("username");
-    res.redirect("/urls");
+    res.clearCookie("user_id");
+    res.redirect("/login");
 });
+
 
 app.post("/register", (req, res) => {
     const { email, password } = req.body;
@@ -166,4 +215,8 @@ app.post("/register", (req, res) => {
     };
     res.cookie("user_id", userId);
     res.redirect("/urls");
+});
+
+app.listen(PORT, () => {
+    console.log(`Example app listening on port ${PORT}!`);
 });

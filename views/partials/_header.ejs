@@ -10,25 +10,28 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-    </div>
-    <span class="navbar-text">
-    </span>
-    <% if (!user_id) { %>
-      <div class="container">
-        <h2></h2>
-        <form action="/login" method="GET">
-          <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit" class="btn btn-primary">Login</button>
-          </form>
-      </div>
-      <% } else { %>
+      <span class="navbar-text">
+      </span>
+      <% if (!user_id) { %>
         <div class="container">
-          <form action="/logout" method="POST" class="form-inline">
-            <h5 style="font-weight:400;margin:0 10px 0 0;">Logged In As: <%= user_id.email %> !</h4>
-              <button style="color:black;background-color:transparent;border-color: black" type="edit" class="btn btn-primary">Logout</button>
+          <h2></h2>
+          <form action="/login" method="GET">
+            <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit"
+              class="btn btn-primary">Login</button>
           </form>
           <form class="form-inline" method="GET" action="/register">
-            <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit" class="btn btn-primary">Register</button>
+            <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit"
+              class="btn btn-primary">Register</button>
           </form>
-        <% } %>
+        </div>
+        <% } else { %>
+          <div class="container">
+            <h5 style="font-weight:400;margin:0 10px 0 0;">Logged In As: <%= user_id.email %> !</h4>
+                <form action="/logout" method="POST" class="form-inline">
+                  <button style="color:black;background-color:transparent;border-color: black" type="edit"
+                    class="btn btn-primary">Logout</button>
+                </form>
+
+                <% } %>
   </nav>
 </header>
