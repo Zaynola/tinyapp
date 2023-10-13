@@ -57,9 +57,11 @@ app.get("/urls", (req, res) => {
 // });
 app.get("/urls/new", (req, res) => {
     const user_id = req.cookies['user_id'];
-
+    if (!user_id) {
+        return res.redirect("/login");
+    }
     const templateVars = {
-        urls: urlDatabase, 
+        urls: urlDatabase,
         user_id: users[user_id]
     };
     res.render("urls_new", templateVars);
@@ -120,12 +122,16 @@ function generateRandomString(length = 6) {
 }
 
 app.post("/urls", (req, res) => {
-    const longURL = req.body.longURL; // Extract the longURL from the request body
-    const shortURL = generateRandomString();
-    // Add the shortURL-longURL pair to the urlDatabase
-    urlDatabase[shortURL] = longURL;
-    // Redirect the user to the newly created URL's details page
-    res.redirect(`/urls/${shortURL}`);
+    const user_id = req.cookies['user_id'];
+
+    if (!user_id) {
+        res.status(403).send("You cannot shorten URLs. Please log in or register.");
+    } else {
+        const longURL = req.body.longURL;
+        const shortURL = generateRandomString();
+        urlDatabase[shortURL] = longURL;
+        res.redirect(`/urls/${shortURL}`);
+    }
 });
 
 app.post("/urls/:id/delete", (req, res) => {
