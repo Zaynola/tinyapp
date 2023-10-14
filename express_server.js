@@ -125,31 +125,6 @@ app.get("/u/:id", (req, res) => {
     }
 });
 
-// app.get("/urls/:id/edit", (req, res) => {
-//     const user_id = req.cookies['user_id'];
-//     const shortURL = req.params.id;
-//     const url = urlDatabase[shortURL];
-
-//     if (!user_id) {
-//         const errorMessage = "You need to log in to edit this URL.";
-//         const templateVars = {
-//             errorMessage: errorMessage
-//         };
-//         return res.render("urls_error", templateVars);
-//     }
-
-//     if (url) {
-//         if (url.userID === user_id) {
-//             const templateVars = { shortURL, longURL: url.longURL, user_id: user_id };
-//             res.render("urls_edit", templateVars);
-//         } else {
-//             res.status(403).send("You do not have permission to edit this URL.");
-//         }
-//     } else {
-//         res.status(404).send("URL not found");
-//     }
-// });
-
 app.get("/register", (req, res) => {
     const user_id = req.cookies ? req.cookies.user_id : undefined;
     const templateVars = {
@@ -200,16 +175,6 @@ app.post("/urls", (req, res) => {
     }
 });
 
-// app.post("/urls/:id/delete", (req, res) => {
-//     const id = req.params.id;
-
-//     if (urlDatabase[id]) {
-//         delete urlDatabase[id];
-//         res.redirect("/urls");
-//     } else {
-//         res.status(404).send("URL not found");
-//     }
-// });
 app.post("/urls/:id/delete", (req, res) => {
     const user_id = req.cookies['user_id'];
     const shortURL = req.params.id;
@@ -255,7 +220,7 @@ app.post("/login", (req, res) => {
 
 
     if (user) {
-        if (loginPassword === users[user].password) {
+        if (bcrypt.compareSync(loginPassword, users[user].password)) {
             res.cookie("user_id", user);
             res.redirect("/urls");
         } else {
@@ -289,11 +254,12 @@ app.post("/register", (req, res) => {
             return;
         }
     }
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const userId = generateRandomString();
     users[userId] = {
         id: userId,
         email: email,
-        password: password,
+        password: hashedPassword,
     };
     res.cookie("user_id", userId);
     res.redirect("/urls");
