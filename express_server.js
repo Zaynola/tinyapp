@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -124,30 +125,30 @@ app.get("/u/:id", (req, res) => {
     }
 });
 
-app.get("/urls/:id/edit", (req, res) => {
-    const user_id = req.cookies['user_id'];
-    const shortURL = req.params.id;
-    const url = urlDatabase[shortURL];
+// app.get("/urls/:id/edit", (req, res) => {
+//     const user_id = req.cookies['user_id'];
+//     const shortURL = req.params.id;
+//     const url = urlDatabase[shortURL];
 
-    if (!user_id) {
-        const errorMessage = "You need to log in to edit this URL.";
-        const templateVars = {
-            errorMessage: errorMessage
-        };
-        return res.render("urls_error", templateVars);
-    }
+//     if (!user_id) {
+//         const errorMessage = "You need to log in to edit this URL.";
+//         const templateVars = {
+//             errorMessage: errorMessage
+//         };
+//         return res.render("urls_error", templateVars);
+//     }
 
-    if (url) {
-        if (url.userID === user_id) {
-            const templateVars = { shortURL, longURL: url.longURL, user_id: user_id };
-            res.render("urls_edit", templateVars);
-        } else {
-            res.status(403).send("You do not have permission to edit this URL.");
-        }
-    } else {
-        res.status(404).send("URL not found");
-    }
-});
+//     if (url) {
+//         if (url.userID === user_id) {
+//             const templateVars = { shortURL, longURL: url.longURL, user_id: user_id };
+//             res.render("urls_edit", templateVars);
+//         } else {
+//             res.status(403).send("You do not have permission to edit this URL.");
+//         }
+//     } else {
+//         res.status(404).send("URL not found");
+//     }
+// });
 
 app.get("/register", (req, res) => {
     const user_id = req.cookies ? req.cookies.user_id : undefined;
@@ -226,17 +227,7 @@ app.post("/urls/:id/delete", (req, res) => {
     }
 });
 
-// app.post("/urls/:id", (req, res) => {
-//     const id = req.params.id;
-//     const newLongURL = req.body.longURL;
 
-//     if (urlDatabase[id]) {
-//         urlDatabase[id] = newLongURL;
-//         res.redirect("/urls");
-//     } else {
-//         res.status(404).send("URL not found");
-//     }
-// });
 app.post("/urls/:id", (req, res) => {
     const user_id = req.cookies['user_id'];
     const shortURL = req.params.id;
