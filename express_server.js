@@ -7,8 +7,14 @@ app.set("view engine", "ejs");
 app.use(cookieParser());
 
 const urlDatabase = {
-    "b2xVn2": "http://www.lighthouselabs.ca",
-    "9sm5xK": "http://www.google.com"
+    b2xVn2: {
+        longURL: "http://www.lighthouselabs.ca",
+        userID: "aJ481W"
+    },
+    "9sm5xK": {
+        longURL: "http://www.google.com",
+        userID: "aJ48lW"
+    }
 };
 
 const users = {
@@ -22,6 +28,16 @@ const users = {
         email: "user2@example.com",
         password: "dishwasher-funk",
     },
+};
+
+const urlsForUser = (id) => {
+    const userURLs = {};
+    for (const shortURL in urlDatabase) {
+        if (urlDatabase[shortURL].userID === id) {
+            userURLs[shortURL] = urlDatabase[shortURL];
+        }
+    }
+    return userURLs;
 };
 
 app.use(express.urlencoded({ extended: true }));
@@ -41,22 +57,21 @@ app.get("/hello", (req, res) => {
 app.get("/urls", (req, res) => {
     const user_id = req.cookies['user_id'];
     if (!user_id) {
-        return res.redirect("/login");
+        const errorMessage = "You need to log in first";
+        const templateVars = {
+            errorMessage: errorMessage,
+            user_id: null
+        };
+        return res.render("urls_error", templateVars);
     }
+    const userURLs = urlsForUser(user_id);
     const templateVars = {
-        urls: urlDatabase,
+        urls: userURLs,
         user_id: users[user_id]
     };
     res.render("urls_index", templateVars);
 });
 
-// app.get("/urls/new", (req, res) => {
-//     const templateVars = {
-//         user_id: users[req.cookies['user_id']]
-//     }
-//     res.render("urls_new", templateVars);
-
-// });
 app.get("/urls/new", (req, res) => {
     const user_id = req.cookies['user_id'];
     if (!user_id) {
@@ -69,10 +84,33 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
 });
 
-
 app.get("/urls/:id", (req, res) => {
-    const templateVars = { id: req.params.id, longURL: "http://www.lighthouselabs.ca" };
-    res.render("urls_show", templateVars);
+    const user_id = req.cookies['user_id'];
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
+    console.log(`shortURL, ${shortURL}`)
+    console.log(`user_id, ${user_id}`)
+    console.log(url)
+
+    if (!user_id) {
+        const errorMessage = "You need to log in to access this URL.";
+        const templateVars = {
+            errorMessage: errorMessage,
+            user_id: null
+        };
+        return res.render("urls_error", templateVars);
+    }
+
+    if (url) {
+        if (url.userID === user_id) {
+            const templateVars = { shortURL, longURL: url.longURL, user_id: user_id };
+            res.render("urls_show", templateVars);
+        } else {
+            res.status(403).send("You do not have permission to access this URL.");
+        }
+    } else {
+        res.status(404).send("URL not found");
+    }
 });
 
 app.get("/u/:id", (req, res) => {
@@ -81,6 +119,31 @@ app.get("/u/:id", (req, res) => {
 
     if (longURL) {
         res.redirect(longURL);
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
+
+app.get("/urls/:id/edit", (req, res) => {
+    const user_id = req.cookies['user_id'];
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
+
+    if (!user_id) {
+        const errorMessage = "You need to log in to edit this URL.";
+        const templateVars = {
+            errorMessage: errorMessage
+        };
+        return res.render("urls_error", templateVars);
+    }
+
+    if (url) {
+        if (url.userID === user_id) {
+            const templateVars = { shortURL, longURL: url.longURL, user_id: user_id };
+            res.render("urls_edit", templateVars);
+        } else {
+            res.status(403).send("You do not have permission to edit this URL.");
+        }
     } else {
         res.status(404).send("URL not found");
     }
@@ -131,44 +194,66 @@ app.post("/urls", (req, res) => {
     } else {
         const longURL = req.body.longURL;
         const shortURL = generateRandomString();
-        urlDatabase[shortURL] = longURL;
+        urlDatabase[shortURL] = { longURL: longURL, userID: user_id };
         res.redirect(`/urls/${shortURL}`);
     }
 });
 
-app.post("/urls/:id/delete", (req, res) => {
-    const id = req.params.id;
+// app.post("/urls/:id/delete", (req, res) => {
+//     const id = req.params.id;
 
-    if (urlDatabase[id]) {
-        delete urlDatabase[id];
-        res.redirect("/urls");
-    } else {
-        res.status(404).send("URL not found");
-    }
-});
-
-app.post("/urls/:id", (req, res) => {
-    const id = req.params.id;
-    const newLongURL = req.body.longURL; // Get the new longURL from the request body
-
-    if (urlDatabase[id]) {
-        urlDatabase[id] = newLongURL;
-        res.redirect("/urls");
-    } else {
-        res.status(404).send("URL not found");
-    }
-});
-
-//add a endpoint to handle a post to /login that set a cookie named username
-// app.post("/login", (req, res) => {
-//     const { user_id } = req.body;
-//     res.cookie("user_id", user_id);
-//     res.redirect("/urls");
+//     if (urlDatabase[id]) {
+//         delete urlDatabase[id];
+//         res.redirect("/urls");
+//     } else {
+//         res.status(404).send("URL not found");
+//     }
 // });
+app.post("/urls/:id/delete", (req, res) => {
+    const user_id = req.cookies['user_id'];
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
 
+    if (url) {
+        if (url.userID === user_id) {
+            delete urlDatabase[shortURL];
+            res.redirect("/urls");
+        } else {
+            res.status(403).send("You do not have permission to delete this URL.");
+        }
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
 
+// app.post("/urls/:id", (req, res) => {
+//     const id = req.params.id;
+//     const newLongURL = req.body.longURL;
 
+//     if (urlDatabase[id]) {
+//         urlDatabase[id] = newLongURL;
+//         res.redirect("/urls");
+//     } else {
+//         res.status(404).send("URL not found");
+//     }
+// });
+app.post("/urls/:id", (req, res) => {
+    const user_id = req.cookies['user_id'];
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
 
+    if (url) {
+        if (url.userID === user_id) {
+            const newLongURL = req.body.longURL;
+            urlDatabase[shortURL].longURL = newLongURL;
+            res.redirect("/urls");
+        } else {
+            res.status(403).send("You do not have permission to edit this URL.");
+        }
+    } else {
+        res.status(404).send("URL not found");
+    }
+});
 
 app.post("/login", (req, res) => {
 
@@ -178,9 +263,9 @@ app.post("/login", (req, res) => {
     const loginUser = users[user]
 
 
-    if (loginUser) {
-        if (loginPassword === loginUser.password) {
-            res.cookie("user_id", user.id);
+    if (user) {
+        if (loginPassword === users[user].password) {
+            res.cookie("user_id", user);
             res.redirect("/urls");
         } else {
             return res.status(403).send('Invalid password');
@@ -191,8 +276,6 @@ app.post("/login", (req, res) => {
 
 }
 );
-
-
 
 // Add a route for handling logout
 app.post("/logout", (req, res) => {
@@ -223,6 +306,31 @@ app.post("/register", (req, res) => {
     };
     res.cookie("user_id", userId);
     res.redirect("/urls");
+});
+
+app.post("/urls/:id/delete", (req, res) => {
+    const user_id = req.cookies['user_id'];
+    const shortURL = req.params.id;
+    const url = urlDatabase[shortURL];
+
+    if (!user_id) {
+        const errorMessage = "You need to log in to delete this URL.";
+        const templateVars = {
+            errorMessage: errorMessage
+        };
+        return res.render("urls_error", templateVars);
+    }
+
+    if (url) {
+        if (url.userID === user_id) {
+            delete urlDatabase[shortURL];
+            res.redirect("/urls");
+        } else {
+            res.status(403).send("You do not have permission to delete this URL.");
+        }
+    } else {
+        res.status(404).send("URL not found");
+    }
 });
 
 app.listen(PORT, () => {
