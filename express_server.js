@@ -1,11 +1,14 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
+app.use(cookieSession({
+    name: 'session',
+    keys: ['key1', 'key2']
+}))
 
 const urlDatabase = {
     b2xVn2: {
@@ -56,7 +59,7 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     if (!user_id) {
         const errorMessage = "You need to log in first";
         const templateVars = {
@@ -74,7 +77,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     if (!user_id) {
         return res.redirect("/login");
     }
@@ -86,7 +89,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const shortURL = req.params.id;
     const url = urlDatabase[shortURL];
     console.log(`shortURL, ${shortURL}`)
@@ -126,7 +129,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-    const user_id = req.cookies ? req.cookies.user_id : undefined;
+    const user_id = req.session ? req.session.user_id : undefined;
     const templateVars = {
         user_id: user_id
     };
@@ -134,7 +137,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-    if (!req.cookies.user_id) {
+    if (!req.session.user_id) {
         let templateVars = { user_id: "" };
         return res.render("login", templateVars);
     }
@@ -163,7 +166,7 @@ function generateRandomString(length = 6) {
 }
 
 app.post("/urls", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
 
     if (!user_id) {
         res.status(403).send("You cannot shorten URLs. Please log in or register.");
@@ -176,7 +179,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const shortURL = req.params.id;
     const url = urlDatabase[shortURL];
 
@@ -194,7 +197,7 @@ app.post("/urls/:id/delete", (req, res) => {
 
 
 app.post("/urls/:id", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const shortURL = req.params.id;
     const url = urlDatabase[shortURL];
 
@@ -221,7 +224,7 @@ app.post("/login", (req, res) => {
 
     if (user) {
         if (bcrypt.compareSync(loginPassword, users[user].password)) {
-            res.cookie("user_id", user);
+            req.session.user_id = user;
             res.redirect("/urls");
         } else {
             return res.status(403).send('Invalid password');
@@ -235,7 +238,7 @@ app.post("/login", (req, res) => {
 
 // Add a route for handling logout
 app.post("/logout", (req, res) => {
-    res.clearCookie("user_id");
+    req.session = null;
     res.redirect("/login");
 });
 
@@ -261,12 +264,12 @@ app.post("/register", (req, res) => {
         email: email,
         password: hashedPassword,
     };
-    res.cookie("user_id", userId);
+    req.session.user_id = userId;
     res.redirect("/urls");
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const shortURL = req.params.id;
     const url = urlDatabase[shortURL];
 
