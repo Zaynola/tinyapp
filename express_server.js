@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const { getUserByEmail } = require('./helpers.js');
 
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -144,15 +145,6 @@ app.get("/login", (req, res) => {
     res.redirect("/urls");
 });
 
-
-const getUserByEmail = (email, users) => {
-    for (const userId in users) {
-        if (users[userId].email === email) {
-            return userId;
-        }
-    }
-    return null;
-};
 // Define a function to generate a random alphanumeric string of a given length
 function generateRandomString(length = 6) {
     const characters = 'abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -224,7 +216,7 @@ app.post("/login", (req, res) => {
 
     if (user) {
         if (bcrypt.compareSync(loginPassword, users[user].password)) {
-            req.session.user_id = user;
+            req.session.user_id = user.id;
             res.redirect("/urls");
         } else {
             return res.status(403).send('Invalid password');
